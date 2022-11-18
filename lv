@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+org=$1
+repo=$2
+type=$3
+url="https://github.com/$org/$repo"
+
+fetch()
+{
+    if command -v curl > /dev/null
+    then
+        contents=$(curl -s -L "$1")
+    elif command -v wget > /dev/null
+    then
+        contents=$(wget -q -O - "$1")
+    fi
+
+    echo "$contents"
+}
+
+if [ "$type" = "" ]; then
+    contents=$(fetch "$url/tags")
+    version=$(echo $contents | sed -n 's/^.*class="Link--primary">\([^<]*\).*$/\1/p' | sort -r | head -n 1)
+elif [ "$type" = "1" ]; then
+    contents=$(fetch "$url/releases/latest")
+    version=$(echo $contents | sed -n 's#^.*/tree/\([^"]*\).*$#\1#p')
+fi
+
+echo $version
