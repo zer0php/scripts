@@ -1,9 +1,8 @@
 #!/usr/bin/env sh
 
-org=$1
-repo=$2
-type=$3
-url="https://github.com/$org/$repo"
+repo=$1
+type=$2
+url="https://github.com/$repo"
 
 fetch()
 {
