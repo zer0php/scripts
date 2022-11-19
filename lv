@@ -2,6 +2,17 @@
 
 repo=$1
 type=$2
+
+if [ "$repo" = "" ]; then
+	echo "Usage: $0 repo [type]"
+    echo
+	echo "example #1: $0 php/php-src tags"
+    echo "example #2: $0 bitnami-labs/sealed-secrets"
+    echo "example #3: curl -s \$REMOTE_URL/$0 | sh -s bitnami-labs/sealed-secrets"
+
+    exit 1
+fi
+
 url="https://github.com/$repo"
 
 fetch()
@@ -18,11 +29,11 @@ fetch()
 }
 
 if [ "$type" = "" ]; then
-    contents=$(fetch "$url/tags")
-    version=$(echo $contents | sed -n 's/^.*class="Link--primary">\([^<]*\).*$/\1/p' | sort -r | head -n 1)
-elif [ "$type" = "1" ]; then
     contents=$(fetch "$url/releases/latest")
     version=$(echo $contents | sed -n 's#^.*/tree/\([^"]*\).*$#\1#p')
+elif [ "$type" = "tags" ]; then
+    contents=$(fetch "$url/tags")
+    version=$(echo $contents | sed -n 's/^.*class="Link--primary">\([^<]*\).*$/\1/p' | sort -r | head -n 1)
 fi
 
 echo $version
