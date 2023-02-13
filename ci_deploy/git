@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 action="$1"
-version="1.0.0"
+version="1.0.1"
 
 function tryToConfigureSSHKey() {
   if [[ -f "${GIT_SSH_KEY_FILE}" ]]; then
@@ -38,7 +38,7 @@ function push() {
 }
 
 case "${action}" in
-  ccp)
+  commitAndPushWithConfig)
     config
     commit
     push
@@ -60,6 +60,7 @@ case "${action}" in
     echo "$0 config, envs: GIT_USER_NAME, GIT_USER_EMAIL"
     echo "$0 commit, envs: GIT_COMMIT_MESSAGE [PROJECT_PATH] [COMMIT_SHA] [MESSAGE] [AUTHOR_USERNAME] [AUTHOR]"
     echo "$0 push, envs: GIT_ORIGIN_URL [GIT_REMOTE_BRANCH]"
+    echo "$0 commitAndPushWithConfig, alias of config,commit,push"
     ;;
 
   version)
