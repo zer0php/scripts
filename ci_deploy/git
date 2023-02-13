@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+action="$1"
+version="1.0.0"
+
+function tryToConfigureSSHKey() {
+  if [[ -f "${GIT_SSH_KEY_FILE}" ]]; then
+      chmod 600 "${GIT_SSH_KEY_FILE}"
+      if [[ -z "${GIT_SSH_COMMAND}" ]]; then
+          export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i ${GIT_SSH_KEY_FILE}"
+      fi
+  fi
+}
+
+function config() {
+    git config user.name "${GIT_USER_NAME}"
+    git config user.email "${GIT_USER_EMAIL}"
+}
+
+function commit() {
+    commit_message="${GIT_COMMIT_MESSAGE}"
+    commit_message="${commit_message//\{project_path\}/"${PROJECT_PATH}"}"
+    commit_message="${commit_message//\{commit_sha\}/"${COMMIT_SHA}"}"
+    commit_message="${commit_message//\{message\}/"${MESSAGE}"}"
+    commit_message="${commit_message//\{author_username\}/"${AUTHOR_USERNAME}"}"
+    commit_message="${commit_message//\{author\}/"${AUTHOR}"}"
+
+    git add .
+    git commit -v -m "$(echo -e "${commit_message}")" || exit 0
+}
+
+function push() {
+    : ${GIT_REMOTE_BRANCH:="main"}
+    git remote add origin "${GIT_ORIGIN_URL}" || git remote set-url origin "${GIT_ORIGIN_URL}"
+
+    tryToConfigureSSHKey
+    git push origin "HEAD:${GIT_REMOTE_BRANCH}"
+}
+
+case "${action}" in
+  ccp)
+    config
+    commit
+    push
+    ;;
+
+  config)
+    config
+    ;;
+
+  commit)
+    commit
+    ;;
+
+  push)
+    push
+    ;;
+
+  help)
+    echo "$0 config, envs: GIT_USER_NAME, GIT_USER_EMAIL"
+    echo "$0 commit, envs: GIT_COMMIT_MESSAGE [PROJECT_PATH] [COMMIT_SHA] [MESSAGE] [AUTHOR_USERNAME] [AUTHOR]"
+    echo "$0 push, envs: GIT_ORIGIN_URL [GIT_REMOTE_BRANCH]"
+    ;;
+
+  version)
+    echo "${version}"
+    ;;
+
+  *)
+    echo "Usage: $0 help"
+    echo "Version: ${version}"
+
+    exit 1
+    ;;
+esac
