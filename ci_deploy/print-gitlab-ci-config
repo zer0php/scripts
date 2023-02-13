@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# version: 3.1.0
+
+set -eo pipefail
+
+export project_name="$1"
+
+if [ -z "${project_name}" ]; then
+  echo "Usage: `basename $0` PROJECT_NAME [FILES_PATTERN]"
+  echo "example: `basename $0` project '/tmp/*.yml'"
+
+  exit 1
+fi
+
+files_pattern="$2"
+
+: ${JOB_NAME:="trigger"}
+
+contents=$(yq e '.stages[0] = "trigger"' -n)
+contents=$(echo "$contents" | yq e '.'${JOB_NAME}'.stage = "trigger"')
+contents=$(echo "$contents" | yq e '.'${JOB_NAME}'.trigger.project = strenv(project_name)')
+contents=$(echo "$contents" | yq e '.'${JOB_NAME}'.trigger.strategy = "depend"')
+
+for file in ${files_pattern}; do
+  export key="FILE_CONTENT_$(basename "${file}" | tr '-' '_' | tr '.' '_' | tr '[:lower:]' '[:upper:]')_BASE64"
+  export file_content_base64=$(cat "${file}" | base64 -w 0)
+
+  if [ ${#file_content_base64} -ge 9999 ]; then
+    echo "Error: '${file}' [${key}] files is too big. (max: 9999, current: ${#file_content_base64})" >&2
+
+    exit 1
+  fi
+
+  contents=$(echo "$contents" | yq e '.'${JOB_NAME}'.variables += {strenv(key):strenv(file_content_base64)}')
+done
+
+for env in ${!ENV*}; do
+  export key="${env:4}"
+  export value=$(printenv "${env}")
+
+  contents=$(echo "$contents" | yq e '.'${JOB_NAME}'.variables += {strenv(key):strenv(value)}')
+done
+
+echo "$contents"
